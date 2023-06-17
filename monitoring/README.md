@@ -1,96 +1,98 @@
-<p style="font-size:14px" align="right">
-<a href="https://kjnodes.com/" target="_blank">Visit our website <img src="https://user-images.githubusercontent.com/50621007/168689709-7e537ca6-b6b8-4adc-9bd0-186ea4ea4aed.png" width="30"/></a>
-<a href="https://discord.gg/EY35ZzXY" target="_blank">Join our discord <img src="https://user-images.githubusercontent.com/50621007/176236430-53b0f4de-41ff-41f7-92a1-4233890a90c8.png" width="30"/></a>
-<a href="https://kjnodes.com/" target="_blank">Visit our website <img src="https://user-images.githubusercontent.com/50621007/168689709-7e537ca6-b6b8-4adc-9bd0-186ea4ea4aed.png" width="30"/></a>
-</p>
-
-<p style="font-size:14px" align="right">
-<a href="https://hetzner.cloud/?ref=y8pQKS2nNy7i" target="_blank">Deploy your VPS using our referral link to get 20€ bonus <img src="https://user-images.githubusercontent.com/50621007/174612278-11716b2a-d662-487e-8085-3686278dd869.png" width="30"/></a>
-</p>
-
-<p align="center">
-  <img height="100" height="auto" src="https://user-images.githubusercontent.com/50621007/165246332-1bb9cb35-edc7-4531-ac84-8479784af471.png">
-</p>
-
-# Set up monitoring and alerting for coho validator
+# monitoring and alerting for coho validator
 
 ## Prerequisites
 
 ### Install exporters on validator node
+
 First of all you will have to install exporters on validator node. For that you can use one-liner below
+
 ```
 wget -O install_exporters.sh https://raw.githubusercontent.com/kj89/cosmos_node_monitoring/master/install_exporters.sh && chmod +x install_exporters.sh && ./install_exporters.sh
 ```
 
-| KEY |VALUE |
-|---------------|-------------|
-| **bond_denom** | Denominated token name, for example, `ucoho` for coho testnet. You can find it in genesis file |
+| KEY              | VALUE                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **bond_denom**   | Denominated token name, for example, `ucoho` for coho testnet. You can find it in genesis file                                                                           |
 | **bench_prefix** | Prefix for chain addresses, for example, `coho` for coho testnet. You can find it in public addresses like this **coho**_valoper1zyyz4m9ytdf60fn9yaafx7uy7h463n7alv2ete_ |
 
 make sure following ports are open:
+
 - `9100` (node-exporter)
 - `9300` (cosmos-exporter)
 
 prometheus metrics should be `enabled` and port `26660` should be available on validator instance
 
 To enable prometheus you have to run command below and after that please restart service to apply changes
+
 ```
 # enable prometheus
 sed -i -e "s/prometheus = false/prometheus = true/" $HOME/.coho/config/config.toml
 ```
 
 ## Deployment
-Monitoring stack needs to be deployed on seperate machine to be able to notify in case if validator goes down! 
+
+Monitoring stack needs to be deployed on seperate machine to be able to notify in case if validator goes down!
 To run monitoring stack you dont need beastly server with multiple cores. It will be more than enough to run it on smallest available vps
 
 ### System requirements
+
 Ubuntu 20.04 / 1 VCPU / 2 GB RAM / 20 GB SSD
 
 ### Install monitoring stack
+
 To install monitirng stack you can use one-liner below
+
 ```
 wget -O install_monitoring.sh https://raw.githubusercontent.com/kj89/cosmos_node_monitoring/master/install_monitoring.sh && chmod +x install_monitoring.sh && ./install_monitoring.sh
 ```
 
 ### Copy _.env.example_ into _.env_
+
 ```
 cp $HOME/cosmos_node_monitoring/config/.env.example $HOME/cosmos_node_monitoring/config/.env
 ```
 
 ### Update values in _.env_ file
+
 ```
 vim $HOME/cosmos_node_monitoring/config/.env
 ```
 
-| KEY | VALUE |
-|---------------|-------------|
-| TELEGRAM_ADMIN | Your user id you can get from [@userinfobot](https://t.me/userinfobot). The bot will only reply to messages sent from the user. All other messages are dropped and logged on the bot's console |
+| KEY            | VALUE                                                                                                                                                                                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TELEGRAM_ADMIN | Your user id you can get from [@userinfobot](https://t.me/userinfobot). The bot will only reply to messages sent from the user. All other messages are dropped and logged on the bot's console                 |
 | TELEGRAM_TOKEN | Your telegram bot access token you can get from [@botfather](https://telegram.me/botfather). To generate new token just follow a few simple steps described [here](https://core.telegram.org/bots#6-botfather) |
 
 ### Export _.env_ file values into _.bash_profile_
+
 ```
 echo "export $(xargs < $HOME/cosmos_node_monitoring/config/.env)" > $HOME/.bash_profile
 source $HOME/.bash_profile
 ```
 
 ### Add validator into _prometheus_ configuration file
+
 To add validator use command with specified `VALIDATOR_IP`, `VALOPER_ADDRESS`, `WALLET_ADDRESS` and `PROJECT_NAME`
+
 ```
 $HOME/cosmos_node_monitoring/add_validator.sh VALIDATOR_IP VALOPER_ADDRESS WALLET_ADDRESS PROJECT_NAME
 ```
 
-> example: ```$HOME/cosmos_node_monitoring/add_validator.sh 1.2.3.4 cohovaloper1zyyz4m9ytdf60fn9yaafx7uy7h463n7alv2ete coho1zyyz4m9ytdf60fn9yaafx7uy7h463n7a05eshc coho```
+> example: `$HOME/cosmos_node_monitoring/add_validator.sh 1.2.3.4 cohovaloper1zyyz4m9ytdf60fn9yaafx7uy7h463n7alv2ete coho1zyyz4m9ytdf60fn9yaafx7uy7h463n7a05eshc coho`
 
 To add more validators just run command above with validator values
 
 ### Run docker compose
+
 Deploy the monitoring stack
+
 ```
 cd $HOME/cosmos_node_monitoring
 docker compose up -d
 ```
 
 ports used:
+
 - `8080` (alertmanager-bot)
 - `9090` (prometheus)
 - `9093` (alertmanager)
@@ -99,6 +101,7 @@ ports used:
 ## Configuration
 
 ### Configure Grafana
+
 1. Open Grafana in your web browser. It should be available on port `9999`
 
 ![image](https://user-images.githubusercontent.com/50621007/160622455-09af4fbf-2efb-4afb-a8f8-57a2b247f705.png)
@@ -121,8 +124,8 @@ ports used:
 
 4. Congratulations you have successfully configured Cosmos Validator Dashboard
 
-
 ### Configrure Telegram alerting
+
 1. Open conversation with your Telegram bot you created with [@botfather](https://telegram.me/botfather) and type `/start` to activate bot
 
 ![image](https://user-images.githubusercontent.com/50621007/160623782-e18a42c4-659d-477b-9189-43d9027d518c.png)
@@ -134,24 +137,31 @@ ports used:
 ## Testing
 
 ### Test alerts
+
 1. For simple test you can stop `node-exporter` service for 5 minutes. It should trigger alert
+
 ```
 systemctl stop node_exporter
 ```
+
 2. You will see message from bot firing
 
 ![image](https://user-images.githubusercontent.com/50621007/161050843-889edc5e-4e27-4778-9010-b9e9e861cc74.png)
 
 3. Now you can start `node-exporter` service back
+
 ```
 systemctl start node_exporter
 ```
+
 4. You will get confirmation from bot that issue is resolved
 
 ![image](https://user-images.githubusercontent.com/50621007/161051501-6e87cbb1-6699-4557-81ed-9564db57a76f.png)
 
 ## Dashboard contents
+
 Grafana dashboard is devided into 4 sections:
+
 - **Validator health** - main stats for validator health. connected peers and missed blocks
 
 ![image](https://user-images.githubusercontent.com/50621007/160629676-bc3c4f0f-66df-4a5f-9844-dca308072e7a.png)
@@ -169,6 +179,7 @@ Grafana dashboard is devided into 4 sections:
 ![image](https://user-images.githubusercontent.com/50621007/160630213-5e92b3ce-92c9-4f48-8856-383ca884b621.png)
 
 ## Cleanup all container data
+
 ```
 cd $HOME/cosmos_node_monitoring
 docker compose down
@@ -176,7 +187,9 @@ docker volume prune -f
 ```
 
 ## Reference list
+
 Resources I used in this project:
+
 - Grafana Validator stats [Cosmos Validator by freak12techno](https://grafana.com/grafana/dashboards/14914)
 - Grafana Hardware health [AgoricTools by Chainode](https://github.com/Chainode/AgoricTools)
 - Stack of monitoring tools, docker configuration [node_tooling by Xiphiar](https://github.com/Xiphiar/node_tooling/)
